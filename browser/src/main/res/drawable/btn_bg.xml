@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fondo de botones: se ve bien con el control remoto (resalta el boton enfocado) -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true">
+        <shape><solid android:color="#1E5BD8" /><corners android:radius="8dp" /></shape>
+    </item>
+    <item android:state_pressed="true">
+        <shape><solid android:color="#9DB7EE" /><corners android:radius="8dp" /></shape>
+    </item>
+    <item>
+        <shape><solid android:color="#E6EAF2" /><corners android:radius="8dp" /></shape>
+    </item>
+</selector>

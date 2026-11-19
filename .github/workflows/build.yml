@@ -15,14 +15,18 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with: { gradle-version: '8.14.3' }
       - run: gradle assembleRelease --no-daemon
-      - run: cp app/build/outputs/apk/release/*.apk Transfer.apk
+      - run: |
+          cp app/build/outputs/apk/release/*.apk Transfer.apk
+          cp browser/build/outputs/apk/release/*.apk Navegador.apk
       - uses: actions/upload-artifact@v4
-        with: { name: Transfer-apk, path: Transfer.apk }
+        with: { name: apks, path: '*.apk' }
       - name: Publicar en Releases
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
-          name: Transfer (última versión)
-          body: "APK compilado automáticamente desde ${{ github.sha }}."
-          files: Transfer.apk
+          name: Transfer y Navegador (última versión)
+          body: "Transfer.apk (servidor) y Navegador.apk (navegador para apps locales), compilados automáticamente desde ${{ github.sha }}."
+          files: |
+            Transfer.apk
+            Navegador.apk
           make_latest: true
