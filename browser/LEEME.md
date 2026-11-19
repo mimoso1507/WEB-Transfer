@@ -1,7 +1,7 @@
-# Navegador (para apps de tu red local)
+# Navegador y Archivos (para tu red local)
 
-Navegador para Android y Android TV pensado para abrir apps de tu Wi-Fi como
-**Transfer**. Descarga `Navegador.apk` en [Releases](../../releases/latest).
+App para Android y Android TV con dos herramientas; al abrirla preguntas cuál usar.
+El **navegador** está pensado para abrir apps de tu Wi-Fi como **Transfer**. Descarga `Navegador.apk` en [Releases](../../releases/latest).
 
 ## Qué tiene
 
@@ -17,6 +17,21 @@ Navegador para Android y Android TV pensado para abrir apps de tu Wi-Fi como
 - **Videos en pantalla completa**, favoritos (★) y recientes.
 - Acepta páginas `http://` y certificados propios de apps locales (pregunta antes).
 - Aparece en el menú de apps de Android TV.
+
+## Archivos (explorador)
+
+- Navega por el almacenamiento interno, tarjeta SD / USB y carpetas frecuentes.
+- **Copiar, cortar, pegar, borrar, renombrar, crear carpeta**, seleccionar varios y compartir.
+- **Instalar apps**: toca un `.apk` (la primera vez pide el permiso "instalar apps desconocidas").
+- Abrir archivos con otras apps, ver detalles, ordenar y mostrar archivos ocultos.
+- Mantén presionado un archivo (o la tecla Menú del control) para ver sus opciones.
+- La primera vez pide el permiso para ver todos los archivos.
+
+## Accesos directos
+
+En el navegador, el botón 📌 crea un acceso directo a la página actual en la pantalla
+de inicio del equipo. En teléfonos y tablets aparece como una app más. Algunos
+lanzadores de Android TV no permiten accesos directos nuevos; ahí usa favoritos (★).
 
 ## Código
 

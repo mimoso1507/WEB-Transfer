@@ -77,6 +77,7 @@ public class MainActivity extends Activity {
     private final Map<String, Scanner.Found> found = Collections.synchronizedMap(new LinkedHashMap<String, Scanner.Found>());
     private volatile boolean scanning;
     private String[] pendingDownload;
+    private Bitmap pageIcon;
 
     @Override
     protected void onCreate(Bundle saved) {
@@ -161,6 +162,7 @@ public class MainActivity extends Activity {
         bar.addView(button("Ir", v -> submitAddress()));
         favButton = button("☆", v -> toggleFavorite());
         bar.addView(favButton);
+        bar.addView(button("\uD83D\uDCCC", v -> createShortcut()));
 
         progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
         progress.setMax(100);
@@ -217,6 +219,7 @@ public class MainActivity extends Activity {
 
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                pageIcon = favicon;
                 showAddress(url);
             }
 
@@ -259,6 +262,11 @@ public class MainActivity extends Activity {
         });
 
         web.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onReceivedIcon(WebView view, Bitmap icon) {
+                pageIcon = icon;
+            }
+
             @Override
             public void onProgressChanged(WebView view, int p) {
                 progress.setProgress(p);
@@ -583,6 +591,82 @@ public class MainActivity extends Activity {
             favButton.setText("★");
             toast("Guardado en favoritos");
         }
+    }
+
+    // ---------------------------------------------------------------- accesos directos
+
+    /** Icono del acceso directo: el de la pagina si lo hay, o una letra sobre fondo azul. */
+    private Bitmap shortcutIcon(String title) {
+        int size = 192;
+        Bitmap bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        android.graphics.Canvas c = new android.graphics.Canvas(bmp);
+        android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+        p.setColor(Color.parseColor("#1E5BD8"));
+        c.drawRoundRect(new android.graphics.RectF(0, 0, size, size), 40, 40, p);
+        if (pageIcon != null) {
+            p.setColor(Color.WHITE);
+            c.drawRoundRect(new android.graphics.RectF(16, 16, size - 16, size - 16), 28, 28, p);
+            c.drawBitmap(Bitmap.createScaledBitmap(pageIcon, size - 56, size - 56, true), 28, 28, null);
+        } else {
+            p.setColor(Color.WHITE);
+            p.setTextSize(110);
+            p.setTextAlign(android.graphics.Paint.Align.CENTER);
+            p.setFakeBoldText(true);
+            String letter = title.isEmpty() ? "N" : title.substring(0, 1).toUpperCase();
+            c.drawText(letter, size / 2f, size / 2f + 38, p);
+        }
+        return bmp;
+    }
+
+    /** Crea un acceso directo a la pagina actual en la pantalla de inicio del equipo. */
+    @SuppressWarnings("deprecation")
+    private void createShortcut() {
+        if (isHome()) { toast("Abre una pagina para crear su acceso directo."); return; }
+        final String url = display(web.getUrl());
+        String t = web.getTitle();
+        final EditText input = new EditText(this);
+        input.setSingleLine(true);
+        input.setText(t == null || t.isEmpty() ? Uri.parse(url).getHost() : t);
+        input.setSelectAllOnFocus(true);
+        LinearLayout wrap = new LinearLayout(this);
+        wrap.setPadding(dp(20), dp(8), dp(20), 0);
+        wrap.addView(input, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        new AlertDialog.Builder(this)
+                .setTitle("Crear acceso directo")
+                .setMessage("Nombre que tendra en el menu de apps:")
+                .setView(wrap)
+                .setPositiveButton("Crear", (d, w) -> {
+                    String name = input.getText().toString().trim();
+                    if (name.isEmpty()) name = "Pagina";
+                    Intent open = new Intent(this, MainActivity.class)
+                            .setAction(Intent.ACTION_VIEW).setData(Uri.parse(url))
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    Bitmap icon = shortcutIcon(name);
+                    try {
+                        if (Build.VERSION.SDK_INT >= 26) {
+                            android.content.pm.ShortcutManager sm = getSystemService(android.content.pm.ShortcutManager.class);
+                            if (sm != null && sm.isRequestPinShortcutSupported()) {
+                                android.content.pm.ShortcutInfo info = new android.content.pm.ShortcutInfo.Builder(this, "web-" + url.hashCode())
+                                        .setShortLabel(name).setLongLabel(name)
+                                        .setIcon(android.graphics.drawable.Icon.createWithBitmap(icon))
+                                        .setIntent(open).build();
+                                sm.requestPinShortcut(info, null);
+                                toast("Confirma el acceso directo en la ventana que aparece.");
+                                return;
+                            }
+                        }
+                        Intent add = new Intent("com.android.launcher.action.INSTALL_SHORTCUT")
+                                .putExtra(Intent.EXTRA_SHORTCUT_INTENT, open)
+                                .putExtra(Intent.EXTRA_SHORTCUT_NAME, name)
+                                .putExtra(Intent.EXTRA_SHORTCUT_ICON, icon);
+                        sendBroadcast(add);
+                        toast("Acceso directo enviado a la pantalla de inicio.");
+                    } catch (Exception e) {
+                        toast("Este equipo no permite crear accesos directos. Usa favoritos (la estrella).");
+                    }
+                })
+                .setNegativeButton("Cancelar", null)
+                .show();
     }
 
     // ---------------------------------------------------------------- subir archivos
