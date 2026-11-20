@@ -139,6 +139,7 @@ public class FilesActivity extends Activity {
         pasteButton.setVisibility(View.GONE);
         bar.addView(pasteButton);
         bar.addView(button("Seleccionar todo", v -> selectAll()));
+        bar.addView(button("\u25B6 Enlace", v -> openLink()));
         bar.addView(button("Opciones", v -> options()));
         HorizontalScrollView scroll = new HorizontalScrollView(this);
         scroll.setHorizontalScrollBarEnabled(false);
@@ -425,6 +426,7 @@ public class FilesActivity extends Activity {
         final List<Runnable> runs = new ArrayList<>();
         if (f.isDirectory()) { labels.add("Abrir"); runs.add(() -> open(f)); }
         else if (ext(f).equals("apk")) { labels.add("Instalar app"); runs.add(() -> install(f)); }
+        else if (isMedia(f)) { labels.add("Reproducir"); runs.add(() -> play(f)); }
         else { labels.add("Abrir"); runs.add(() -> openFile(f)); }
         if (f.isFile()) { labels.add("Abrir con..."); runs.add(() -> openWith(f)); }
         labels.add(selected.contains(f) ? "Quitar de la selección" : "Seleccionar (para varios)");
@@ -449,6 +451,7 @@ public class FilesActivity extends Activity {
                 "Ordenar por fecha (recientes primero)",
                 "Ordenar por tamaño",
                 "Permiso para ver todos los archivos",
+                "Reproducir un enlace (mp4, m3u8, mpd...)",
         };
         new AlertDialog.Builder(this).setTitle("Opciones").setItems(items, (d, w) -> {
             switch (w) {
@@ -457,6 +460,7 @@ public class FilesActivity extends Activity {
                 case 2: prefs.edit().putString("orden", "fecha").apply(); break;
                 case 3: prefs.edit().putString("orden", "tamano").apply(); break;
                 case 4: openPermissionSettings(); return;
+                case 5: openLink(); return;
             }
             load(null);
         }).show();
@@ -467,8 +471,44 @@ public class FilesActivity extends Activity {
         return FileProvider.uriFor(f);
     }
 
+    private static boolean isMedia(File f) {
+        if (!f.isFile()) return false;
+        String e = ext(f);
+        if (Arrays.asList("m3u8", "mpd", "m3u", "ts", "mts", "m2ts", "vob", "mkv", "flac", "opus", "ogg", "oga").contains(e)) return true;
+        String m = FileProvider.mimeOf(f);
+        return m.startsWith("video/") || m.startsWith("audio/");
+    }
+
+    /** Reproduce el archivo con el reproductor propio, junto con los demas de la carpeta. */
+    private void play(File f) {
+        List<String> uris = new ArrayList<>(), titles = new ArrayList<>();
+        int start = 0;
+        File parent = f.getParentFile();
+        File[] kids = parent == null ? null : parent.listFiles();
+        if (kids != null) {
+            List<File> media = new ArrayList<>();
+            for (File k : kids) if (isMedia(k) && !ext(k).equals("m3u8") || k.equals(f)) media.add(k);
+            Collections.sort(media, (a, b) -> a.getName().compareToIgnoreCase(b.getName()));
+            for (File k : media) {
+                if (k.equals(f)) start = uris.size();
+                uris.add(Uri.fromFile(k).toString());
+                titles.add(k.getName());
+            }
+        }
+        if (uris.isEmpty()) { uris.add(Uri.fromFile(f).toString()); titles.add(f.getName()); }
+        PlayerActivity.play(this, uris, titles, start);
+    }
+
+    private void openLink() {
+        askName("Abrir enlace de video o audio", "https://", n -> {
+            if (!n.matches("^[a-zA-Z][a-zA-Z0-9+.-]*://.*")) n = "http://" + n;
+            PlayerActivity.play(this, Collections.singletonList(n), Collections.singletonList(Uri.parse(n).getLastPathSegment()), 0);
+        });
+    }
+
     private void openFile(File f) {
         if (ext(f).equals("apk")) { install(f); return; }
+        if (isMedia(f)) { play(f); return; }
         Intent i = new Intent(Intent.ACTION_VIEW).setDataAndType(uri(f), FileProvider.mimeOf(f))
                 .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         try {

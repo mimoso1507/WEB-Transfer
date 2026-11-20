@@ -27,6 +27,18 @@ El **navegador** está pensado para abrir apps de tu Wi-Fi como **Transfer**. De
 - Mantén presionado un archivo (o la tecla Menú del control) para ver sus opciones.
 - La primera vez pide el permiso para ver todos los archivos.
 
+## Reproductor de video y audio
+
+- Toca un video o audio en Archivos y se reproduce con controles (pausa, adelantar y
+  atrasar 10 s, siguiente, velocidad, pista de audio y subtítulos). Reproduce toda la
+  carpeta en orden y recuerda dónde te quedaste.
+- Formatos: MP4, MKV, WebM, AVI, MOV, TS/M2TS, MP3, FLAC, OGG/Opus, AAC, WAV y más.
+  Audio extra (AC3, E-AC3, DTS, TrueHD) con decodificadores FFmpeg incluidos.
+- **VOD y streaming**: enlaces `.m3u8` (HLS), `.mpd` (DASH), Smooth Streaming y listas
+  `.m3u`/`.pls`, locales o de internet. Usa el botón **▶ Enlace** de Archivos.
+- En el navegador, al abrir un enlace de video aparece la opción Reproducir o Descargar.
+- Control remoto: OK muestra los controles, izquierda/derecha adelanta o atrasa.
+
 ## Accesos directos
 
 En el navegador, el botón 📌 crea un acceso directo a la página actual en la pantalla

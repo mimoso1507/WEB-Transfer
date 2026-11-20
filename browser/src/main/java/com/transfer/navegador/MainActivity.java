@@ -727,7 +727,24 @@ public class MainActivity extends Activity {
 
     // ---------------------------------------------------------------- descargas
 
-    private void download(String url, String ua, String disposition, String mime) {
+    private void download(final String url, final String ua, final String disposition, final String mime) {
+        boolean media = (mime != null && (mime.startsWith("video/") || mime.startsWith("audio/")
+                || mime.contains("mpegurl") || mime.equals("application/dash+xml")))
+                || (url.startsWith("http") && PlayerActivity.isStreamUrl(url));
+        if (media) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Video o audio")
+                    .setItems(new String[]{"Reproducir", "Descargar"}, (d, w) -> {
+                        if (w == 0) PlayerActivity.play(this, java.util.Collections.singletonList(url),
+                                java.util.Collections.singletonList(Downloader.fileName(url, disposition, mime)), 0);
+                        else startDownload(url, ua, disposition, mime);
+                    }).show();
+            return;
+        }
+        startDownload(url, ua, disposition, mime);
+    }
+
+    private void startDownload(String url, String ua, String disposition, String mime) {
         if (Build.VERSION.SDK_INT >= 23 && Build.VERSION.SDK_INT < 29
                 && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             pendingDownload = new String[]{url, ua, disposition, mime};
