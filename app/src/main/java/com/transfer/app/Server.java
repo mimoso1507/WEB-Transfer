@@ -49,6 +49,9 @@ class Server {
     private void handle(Socket s) {
         try (Socket sock = s) {
             sock.setSoTimeout(60000);
+            sock.setTcpNoDelay(true);
+            sock.setKeepAlive(true);
+            try { sock.setSendBufferSize(512 * 1024); } catch (Exception ignored) {}
             InputStream in = new BufferedInputStream(sock.getInputStream(), 65536);
             OutputStream out = new BufferedOutputStream(sock.getOutputStream(), 65536);
             while (true) {
@@ -90,12 +93,56 @@ class Server {
             String ct = view ? URLConnection.guessContentTypeFromName(f.getName()) : null;
             if (ct == null) ct = "application/octet-stream";
             String enc = URLEncoder.encode(f.getName(), "UTF-8").replace("+", "%20");
-            String hdr = "HTTP/1.1 200 OK\r\nContent-Type: " + ct + "\r\nContent-Length: " + f.length()
+            long size = f.length(), from = 0, to = size - 1;
+            boolean partial = false;
+            String etag = "\"" + Long.toHexString(size) + "-" + Long.toHexString(f.lastModified()) + "\"";
+            String range = h.get("range");
+            String ifRange = h.get("if-range");
+            if (range != null && range.startsWith("bytes=") && (ifRange == null || ifRange.equals(etag))) {
+                // Se permite reanudar y pedir partes: asi los navegadores pueden continuar una descarga detenida.
+                String r = range.substring(6).trim();
+                int comma = r.indexOf(',');
+                if (comma >= 0) r = r.substring(0, comma).trim();
+                int dash = r.indexOf('-');
+                try {
+                    String a1 = r.substring(0, dash).trim(), b1 = r.substring(dash + 1).trim();
+                    if (a1.isEmpty()) {            // "-N": los ultimos N bytes
+                        long n = Long.parseLong(b1);
+                        from = Math.max(0, size - n);
+                    } else {
+                        from = Long.parseLong(a1);
+                        if (!b1.isEmpty()) to = Math.min(size - 1, Long.parseLong(b1));
+                    }
+                    partial = true;
+                } catch (Exception e) {
+                    partial = false;
+                    from = 0; to = size - 1;
+                }
+                if (partial && (from > to || from >= size)) {
+                    String bad = "HTTP/1.1 416 Range Not Satisfiable\r\nContent-Range: bytes */" + size
+                            + "\r\nContent-Length: 0\r\n\r\n";
+                    out.write(bad.getBytes(StandardCharsets.UTF_8));
+                    return;
+                }
+            }
+            long length = to - from + 1;
+            String hdr = (partial ? "HTTP/1.1 206 Partial Content" : "HTTP/1.1 200 OK")
+                    + "\r\nContent-Type: " + ct + "\r\nContent-Length: " + length
+                    + (partial ? "\r\nContent-Range: bytes " + from + "-" + to + "/" + size : "")
+                    + "\r\nAccept-Ranges: bytes\r\nETag: " + etag
                     + "\r\nContent-Disposition: " + (view ? "inline" : "attachment") + "; filename*=UTF-8''" + enc
                     + "\r\nCache-Control: no-store\r\n\r\n";
             out.write(hdr.getBytes(StandardCharsets.UTF_8));
             if (!head) {
-                try (InputStream fi = new FileInputStream(f)) { copy(fi, out, f.length()); }
+                try (InputStream fi = new FileInputStream(f)) {
+                    long skipped = 0;
+                    while (skipped < from) {
+                        long k = fi.skip(from - skipped);
+                        if (k <= 0) break;
+                        skipped += k;
+                    }
+                    copy(fi, out, length);
+                }
             }
         } else if (method.equals("POST") && path.equals("/api/upload")) {
             String name = "archivo";
@@ -185,7 +232,7 @@ class Server {
     }
 
     private static void copy(InputStream in, OutputStream out, long n) throws IOException {
-        byte[] buf = new byte[256 * 1024];
+        byte[] buf = new byte[64 * 1024];
         while (n > 0) {
             int r = in.read(buf, 0, (int) Math.min(buf.length, n));
             if (r < 0) throw new EOFException("subida interrumpida");
