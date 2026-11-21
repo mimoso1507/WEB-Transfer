@@ -41,16 +41,19 @@ public class StartActivity extends Activity {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(wide ? LinearLayout.HORIZONTAL : LinearLayout.VERTICAL);
         row.setGravity(Gravity.CENTER);
-        LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(wide ? ViewGroup.LayoutParams.MATCH_PARENT : ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         rlp.topMargin = dp(24);
         page.addView(row, rlp);
 
         View web = card("🌐", "Navegador", "Abrir apps de tu red y páginas web", MainActivity.class);
-        View files = card("📁", "Archivos", "Ver, copiar, borrar e instalar apps", FilesActivity.class);
-        LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(dp(260), dp(wide ? 220 : 170));
-        clp.setMargins(dp(12), dp(12), dp(12), dp(12));
-        row.addView(web, clp);
-        row.addView(files, new LinearLayout.LayoutParams(clp));
+        View files = card("\uD83D\uDCC2", "Archivos", "Ver, copiar, borrar, instalar apps y reproducir", FilesActivity.class);
+        View transfer = card("\uD83D\uDD04", "Transfer", "Compartir archivos con otros equipos por Wi-Fi", TransferActivity.class);
+        for (View v : new View[]{web, files, transfer}) {
+            LinearLayout.LayoutParams clp = wide ? new LinearLayout.LayoutParams(0, dp(220), 1)
+                    : new LinearLayout.LayoutParams(dp(280), dp(150));
+            clp.setMargins(dp(10), dp(10), dp(10), dp(10));
+            row.addView(v, clp);
+        }
         setContentView(page);
         web.requestFocus();
     }

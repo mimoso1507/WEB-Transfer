@@ -1,7 +1,9 @@
-# Navegador y Archivos (para tu red local)
+# Navegador, Archivos y Transfer (todo en una app)
 
-App para Android y Android TV con dos herramientas; al abrirla preguntas cuál usar.
-El **navegador** está pensado para abrir apps de tu Wi-Fi como **Transfer**. Descarga `Navegador-Archivos-v2.apk` en [Releases](../../releases/latest).
+App para Android y Android TV con tres herramientas; al abrirla preguntas cuál usar:
+**Navegador**, **Archivos** y **Transfer** (el servidor para pasar archivos por Wi-Fi).
+Si ya tenías la app Transfer separada, desinstálala o no la inicies a la vez (usan el mismo puerto 4747).
+El **navegador** está pensado para abrir apps de tu Wi-Fi como **Transfer**. Descarga `Navegador-Transfer.apk` en [Releases](../../releases/latest).
 
 ## Qué tiene
 
@@ -24,6 +26,13 @@ El **navegador** está pensado para abrir apps de tu Wi-Fi como **Transfer**. De
 - **Videos en pantalla completa**, favoritos (★) y recientes.
 - Acepta páginas `http://` y certificados propios de apps locales (pregunta antes).
 - Aparece en el menú de apps de Android TV.
+
+## Transfer (incluido)
+
+- Botón **Iniciar / Detener** y campo para elegir el puerto (por defecto 4747).
+- Muestra `http://transfer.local:4747` y la dirección con números. Sigue funcionando con la pantalla apagada.
+- Los archivos recibidos quedan en **Descargas/Transfer** (se ven en Archivos).
+- Con Transfer iniciado, el Navegador de esta misma app lo encuentra solo en su pantalla de inicio.
 
 ## Archivos (explorador)
 

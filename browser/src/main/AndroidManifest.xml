@@ -5,6 +5,9 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
@@ -16,20 +19,28 @@
     <uses-feature android:name="android.software.leanback" android:required="false" />
 
     <application
-        android:label="Navegador"
+        android:label="Navegador Transfer"
         android:icon="@drawable/ic_launcher"
         android:banner="@drawable/banner"
         android:usesCleartextTraffic="true"
         android:hardwareAccelerated="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
         <activity android:name=".StartActivity" android:exported="true"
-            android:label="Navegador y Archivos">
+            android:label="Navegador Transfer">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".TransferActivity" android:exported="false"
+            android:label="Transfer" />
+        <service android:name=".TransferService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Servidor local para transferir archivos por Wi-Fi" />
+        </service>
         <activity android:name=".FilesActivity" android:exported="false"
             android:label="Archivos"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation|uiMode" />

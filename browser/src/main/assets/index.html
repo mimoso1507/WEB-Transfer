@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transfer</title>
+<style>
+:root{--bg:#0f1115;--card:#181b22;--line:#2a2f3a;--txt:#e9ecf1;--mut:#9aa3b2;--acc:#4f8cff;--ok:#2ecc71;--bad:#ff5d5d}
+@media (prefers-color-scheme: light){:root{--bg:#f4f6fa;--card:#fff;--line:#dfe3ea;--txt:#151820;--mut:#5d6675}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:860px;margin:0 auto;padding:20px 16px 60px}
+header{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+header h1{font-size:24px;margin:0}
+.addr{margin-left:auto;color:var(--mut);font-size:14px;text-align:right}
+.addr b{color:var(--txt)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+#drop{border:2px dashed var(--line);border-radius:12px;padding:34px 16px;text-align:center;cursor:pointer;transition:.15s}
+#drop.over,#drop:focus{border-color:var(--acc);background:rgba(79,140,255,.08);outline:none}
+#drop .big{font-size:20px;font-weight:600}
+#drop .sm{color:var(--mut);font-size:14px;margin-top:6px}
+button,.btn{font:inherit;border:0;border-radius:10px;padding:10px 16px;background:var(--acc);color:#fff;cursor:pointer;text-decoration:none;display:inline-block}
+button:focus,.btn:focus{outline:3px solid #fff;outline-offset:2px}
+.ghost{background:transparent;border:1px solid var(--line);color:var(--txt)}
+.up{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:14px}
+.up .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar{flex:1.3;height:8px;background:var(--line);border-radius:6px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .1s}
+.up.done .bar i{background:var(--ok)} .up.err .bar i{background:var(--bad)}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.head h2{margin:0;font-size:18px}
+ul{list-style:none;margin:0;padding:0}
+li{display:flex;align-items:center;gap:10px;padding:12px 4px;border-top:1px solid var(--line)}
+li:first-child{border-top:0}
+li .ic{font-size:22px;width:30px;text-align:center}
+li .meta{flex:1;min-width:0}
+li .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+li .sz{color:var(--mut);font-size:13px}
+li .del{background:transparent;color:var(--mut);padding:8px 10px}
+.empty{color:var(--mut);text-align:center;padding:24px 0}
+#qr{display:none;text-align:center} #qr img,#qr canvas{background:#fff;padding:8px;border-radius:8px}
+@media (min-width:1200px){body{font-size:20px}main{max-width:1100px}} /* TV */
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>📁 Transfer</h1>
+    <div class="addr">Abre en otro dispositivo:<br><b>__URL__</b><br><span>__IPURL__</span></div>
+  </header>
+
+  <section class="card">
+    <div id="drop" tabindex="0" role="button">
+      <div class="big">Toca aquí o arrastra archivos</div>
+      <div class="sm">Se enviarán a este servidor y aparecerán en todos los dispositivos</div>
+    </div>
+    <input id="pick" type="file" multiple hidden>
+    <div id="ups"></div>
+  </section>
+
+  <section class="card">
+    <div class="head"><h2>Archivos</h2><button class="ghost" id="reload">Actualizar</button></div>
+    <ul id="list"><li class="empty">Cargando…</li></ul>
+  </section>
+
+  <section class="card" id="qr"><div id="qrbox"></div><div class="sm">Escanea para abrir en el teléfono</div></section>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+const fmt = b => { const u=['B','KB','MB','GB','TB']; let i=0; while(b>=1024&&i<4){b/=1024;i++} return (i?b.toFixed(1):b)+' '+u[i]; };
+const icon = n => { const e=(n.split('.').pop()||'').toLowerCase();
+  if(/^(jpe?g|png|gif|webp|heic|bmp|svg)$/.test(e)) return '🖼️';
+  if(/^(mp4|mkv|mov|avi|webm|m4v)$/.test(e)) return '🎬';
+  if(/^(mp3|wav|flac|m4a|ogg|aac)$/.test(e)) return '🎵';
+  if(/^(zip|rar|7z|tar|gz)$/.test(e)) return '🗜️';
+  if(/^(apk)$/.test(e)) return '📦';
+  if(/^(pdf|docx?|xlsx?|pptx?|txt)$/.test(e)) return '📄';
+  return '📎'; };
+const esc = s => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+async function load(){
+  try{
+    const r = await fetch('/api/files'); const files = await r.json();
+    const ul = $('#list');
+    if(!files.length){ ul.innerHTML='<li class="empty">Todavía no hay archivos</li>'; return; }
+    ul.innerHTML = files.map(f => {
+      const u = '/f/'+encodeURIComponent(f.name);
+      return `<li><span class="ic">${icon(f.name)}</span>
+        <div class="meta"><div class="nm">${esc(f.name)}</div><div class="sz">${fmt(f.size)}</div></div>
+        <a class="btn ghost" href="${u}?view" target="_blank">Ver</a>
+        <a class="btn" href="${u}" download>Descargar</a>
+        <button class="del" data-n="${esc(f.name)}" title="Borrar">✕</button></li>`;
+    }).join('');
+  }catch(e){ $('#list').innerHTML='<li class="empty">Sin conexión con el servidor</li>'; }
+}
+
+function upload(file){
+  return new Promise(done => {
+    const row = document.createElement('div'); row.className='up';
+    row.innerHTML = `<span class="n">${esc(file.name)}</span><span class="bar"><i></i></span><span class="p">0%</span>`;
+    $('#ups').prepend(row);
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST','/api/upload?name='+encodeURIComponent(file.name));
+    xhr.upload.onprogress = e => { if(e.lengthComputable){ const p=Math.round(e.loaded/e.total*100);
+      row.querySelector('i').style.width=p+'%'; row.querySelector('.p').textContent=p+'%'; } };
+    xhr.onload = () => { const ok = xhr.status===200; row.classList.add(ok?'done':'err');
+      row.querySelector('i').style.width='100%'; row.querySelector('.p').textContent = ok?'✓':'Error'; load(); done(); };
+    xhr.onerror = () => { row.classList.add('err'); row.querySelector('.p').textContent='Error'; done(); };
+    xhr.send(file);
+  });
+}
+async function send(files){ for(const f of files) await upload(f); }
+
+const drop = $('#drop'), pick = $('#pick');
+drop.onclick = () => pick.click();
+drop.onkeydown = e => { if(e.key==='Enter'||e.key===' ') pick.click(); };
+pick.onchange = () => { send([...pick.files]); pick.value=''; };
+['dragenter','dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave','drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => send([...e.dataTransfer.files]));
+$('#reload').onclick = load;
+$('#list').addEventListener('click', async e => {
+  const b = e.target.closest('.del'); if(!b) return;
+  if(!confirm('¿Borrar "'+b.dataset.n+'"?')) return;
+  await fetch('/f/'+encodeURIComponent(b.dataset.n), {method:'DELETE'}); load();
+});
+load(); setInterval(load, 5000);
+
+// Código QR (solo si hay internet para cargar la librería)
+const s = document.createElement('script');
+s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+s.onload = () => { $('#qr').style.display='block'; new QRCode($('#qrbox'), {text:'__IPURL__', width:180, height:180}); };
+document.head.appendChild(s);
+</script>
+</body>
+</html>

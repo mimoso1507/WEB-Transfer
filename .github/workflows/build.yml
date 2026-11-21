@@ -17,7 +17,7 @@ jobs:
       - run: gradle assembleRelease --no-daemon
       - run: |
           cp app/build/outputs/apk/release/*.apk Transfer.apk
-          cp browser/build/outputs/apk/release/*.apk Navegador-Archivos-v2.apk
+          cp browser/build/outputs/apk/release/*.apk Navegador-Transfer.apk
       - uses: actions/upload-artifact@v4
         with: { name: apks, path: '*.apk' }
       - name: Publicar en Releases
@@ -25,8 +25,8 @@ jobs:
         with:
           tag_name: latest
           name: Transfer y Navegador (última versión)
-          body: "Transfer.apk (servidor) y Navegador-Archivos-v2.apk (navegador y archivos para apps locales), compilados automáticamente desde ${{ github.sha }}."
+          body: "Transfer.apk (servidor) y Navegador-Transfer.apk (navegador, archivos y Transfer en una sola app), compilados automáticamente desde ${{ github.sha }}."
           files: |
             Transfer.apk
-            Navegador-Archivos-v2.apk
+            Navegador-Transfer.apk
           make_latest: true
