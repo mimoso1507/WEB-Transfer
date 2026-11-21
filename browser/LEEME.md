@@ -5,6 +5,7 @@ El **navegador** está pensado para abrir apps de tu Wi-Fi como **Transfer**. De
 
 ## Qué tiene
 
+- **Escribir dirección**: botón azul grande en la barra (y en la página de inicio, o con la tecla Menú) que abre un cuadro para escribir o pegar cualquier `http://`, `https://` o nombre `.local`. Si escribes palabras, busca en internet.
 - **Nombres `.local`**: abre `transfer.local:4747` aunque la TV no los entienda
   (los resuelve él mismo por mDNS).
 - **Busca solo en tu red**: la pantalla de inicio muestra las páginas que encuentra

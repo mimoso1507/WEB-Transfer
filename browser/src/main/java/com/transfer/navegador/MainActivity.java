@@ -27,7 +27,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
-import android.view.inputmethod.InputMethodManager;
 import android.webkit.SslErrorHandler;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -139,27 +138,32 @@ public class MainActivity extends Activity {
 
         address = new EditText(this);
         address.setSingleLine(true);
-        address.setHint("Direccion, por ejemplo transfer.local:4747");
+        address.setHint("Toca aqui para escribir una direccion (http, https o .local)");
         address.setTextSize(17);
         address.setTextColor(Color.BLACK);
         address.setSelectAllOnFocus(true);
+        // Al tocar o pulsar OK se abre un cuadro para escribir (funciona igual con teclado, control remoto o tactil).
+        address.setKeyListener(null);
+        address.setCursorVisible(false);
+        address.setFocusableInTouchMode(false);
+        address.setFocusable(true);
+        address.setOnClickListener(v -> askAddress());
         address.setBackgroundResource(R.drawable.url_bg);
+        address.setTextSize(18);
         address.setPadding(dp(12), 0, dp(12), 0);
-        address.setImeOptions(EditorInfo.IME_ACTION_GO);
-        address.setInputType(android.text.InputType.TYPE_TEXT_VARIATION_URI | android.text.InputType.TYPE_CLASS_TEXT);
-        address.setOnEditorActionListener((v, actionId, ev) -> {
-            boolean enter = ev != null && ev.getKeyCode() == KeyEvent.KEYCODE_ENTER && ev.getAction() == KeyEvent.ACTION_DOWN;
-            if (actionId == EditorInfo.IME_ACTION_GO || actionId == EditorInfo.IME_ACTION_DONE || enter) {
-                submitAddress();
-                return true;
-            }
-            return false;
-        });
         LinearLayout.LayoutParams alp = new LinearLayout.LayoutParams(0, dp(44), 1);
         alp.setMargins(dp(3), 0, dp(3), 0);
         bar.addView(address, alp);
 
-        bar.addView(button("Ir", v -> submitAddress()));
+        Button write = button("\u270E  Escribir direccion", v -> askAddress());
+        write.setBackgroundResource(R.drawable.btn_primary);
+        write.setTextColor(Color.WHITE);
+        write.setTextSize(19);
+        write.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        write.setPadding(dp(18), 0, dp(18), 0);
+        write.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(48)));
+        ((LinearLayout.LayoutParams) write.getLayoutParams()).setMargins(dp(6), 0, dp(6), 0);
+        bar.addView(write);
         favButton = button("☆", v -> toggleFavorite());
         bar.addView(favButton);
         bar.addView(button("\uD83D\uDCCC", v -> createShortcut()));
@@ -299,10 +303,43 @@ public class MainActivity extends Activity {
         return u == null || u.startsWith("nav:") || u.startsWith("data:") || u.startsWith("about:");
     }
 
-    private void submitAddress() {
-        String text = address.getText().toString().trim();
+    /** Cuadro para escribir o pegar una direccion; tambien sirve para buscar en internet. */
+    private void askAddress() {
+        final EditText input = new EditText(this);
+        input.setSingleLine(true);
+        input.setTextSize(18);
+        input.setHint("https://ejemplo.com  o  transfer.local:4747");
+        input.setInputType(android.text.InputType.TYPE_TEXT_VARIATION_URI | android.text.InputType.TYPE_CLASS_TEXT);
+        input.setImeOptions(EditorInfo.IME_ACTION_GO);
+        String cur = isHome() || web.getUrl() == null ? "" : display(web.getUrl());
+        input.setText(cur);
+        input.setSelectAllOnFocus(true);
+        LinearLayout wrap = new LinearLayout(this);
+        wrap.setPadding(dp(20), dp(8), dp(20), 0);
+        wrap.addView(input, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        final AlertDialog dlg = new AlertDialog.Builder(this)
+                .setTitle("Escribir direccion")
+                .setView(wrap)
+                .setPositiveButton("Ir", (d, w) -> submitAddress(input.getText().toString()))
+                .setNegativeButton("Cancelar", null)
+                .create();
+        input.setOnEditorActionListener((v, actionId, ev) -> {
+            boolean enter = ev != null && ev.getKeyCode() == KeyEvent.KEYCODE_ENTER && ev.getAction() == KeyEvent.ACTION_DOWN;
+            if (actionId == EditorInfo.IME_ACTION_GO || actionId == EditorInfo.IME_ACTION_DONE || enter) {
+                dlg.dismiss();
+                submitAddress(input.getText().toString());
+                return true;
+            }
+            return false;
+        });
+        dlg.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+        dlg.show();
+        input.requestFocus();
+    }
+
+    private void submitAddress(String raw) {
+        String text = raw.trim();
         if (text.isEmpty()) return;
-        hideKeyboard();
         web.requestFocus();
         go(toUrl(text));
     }
@@ -385,7 +422,7 @@ public class MainActivity extends Activity {
     }
 
     private void showAddress(String url) {
-        if (!address.hasFocus()) address.setText(display(url));
+        address.setText(display(url));
         favButton.setText(url != null && isFavorite(display(url)) ? "★" : "☆");
     }
 
@@ -472,7 +509,10 @@ public class MainActivity extends Activity {
          .append("a.small{display:inline-block;margin:4px 8px 0 0;padding:8px 14px;border-radius:8px;background:#E6EAF2;color:#1b2333;text-decoration:none}")
          .append("a.small:focus{outline:3px solid #1E5BD8;background:#d4defa}.row{display:flex;gap:8px;align-items:stretch}.row a.card{flex:1}")
          .append("</style></head><body>");
-        h.append("<h1>Navegador local</h1><p>Abre las apps de tu Wi-Fi, como Transfer. Escribe arriba la direccion (por ejemplo <b>transfer.local:4747</b>) o elige una de aqui.</p>");
+        h.append("<h1>Navegador local</h1>")
+         .append("<a class='card' style='background:#1E5BD8;border-color:#0B3FA8;color:#fff;padding:20px 22px;box-shadow:0 4px 14px rgba(30,91,216,.45)' href='nav://escribir'><div class='t' style='font-size:24px'>\u270E Escribir direccion</div>")
+         .append("<div class='u' style='color:#dbe6ff;font-size:16px'>Cualquier pagina http o https, un nombre .local o una busqueda</div></a>")
+         .append("<p style='margin-top:10px'>Abajo estan las apps que se encontraron en tu Wi-Fi, como Transfer.</p>");
 
         h.append("<h2>En tu red</h2><div id='red'>").append(networkHtml()).append("</div>");
 
@@ -510,6 +550,7 @@ public class MainActivity extends Activity {
         String what = u.getHost() == null ? "" : u.getHost();
         switch (what) {
             case "buscar": scan(); break;
+            case "escribir": askAddress(); break;
             case "quitar":
                 removeEntry("favoritos", u.getQueryParameter("u"));
                 showHome();
@@ -800,7 +841,7 @@ public class MainActivity extends Activity {
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_MENU || keyCode == KeyEvent.KEYCODE_SEARCH) {
-            address.requestFocus();
+            askAddress();
             return true;
         }
         return super.onKeyDown(keyCode, event);
@@ -809,14 +850,8 @@ public class MainActivity extends Activity {
     @Override
     public void onBackPressed() {
         if (customView != null) { exitFullscreen(); return; }
-        if (address.hasFocus()) { web.requestFocus(); showAddress(web.getUrl()); return; }
         if (web.canGoBack()) { web.goBack(); return; }
         super.onBackPressed();
-    }
-
-    private void hideKeyboard() {
-        InputMethodManager im = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-        if (im != null) im.hideSoftInputFromWindow(address.getWindowToken(), 0);
     }
 
     private void toast(String s) {
