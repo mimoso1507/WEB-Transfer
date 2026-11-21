@@ -1,7 +1,7 @@
 # Navegador y Archivos (para tu red local)
 
 App para Android y Android TV con dos herramientas; al abrirla preguntas cuál usar.
-El **navegador** está pensado para abrir apps de tu Wi-Fi como **Transfer**. Descarga `Navegador.apk` en [Releases](../../releases/latest).
+El **navegador** está pensado para abrir apps de tu Wi-Fi como **Transfer**. Descarga `Navegador-Archivos-v2.apk` en [Releases](../../releases/latest).
 
 ## Qué tiene
 
