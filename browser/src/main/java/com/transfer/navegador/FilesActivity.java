@@ -60,7 +60,6 @@ public class FilesActivity extends Activity {
     private final Set<File> selected = new LinkedHashSet<>();
     private final List<File> clipboard = new ArrayList<>();
     private boolean clipboardCut;
-    private File pendingApk;
 
     private SharedPreferences prefs;
     private ListView list;
@@ -88,6 +87,8 @@ public class FilesActivity extends Activity {
         buildUi();
         String last = saved != null ? saved.getString("dir") : null;
         dir = last != null ? new File(last) : null;
+        String start = getIntent().getStringExtra("dir");
+        if (dir == null && start != null && new File(start).isDirectory()) dir = new File(start);
         askPermissionIfNeeded();
         load(null);
     }
@@ -102,11 +103,7 @@ public class FilesActivity extends Activity {
     protected void onResume() {
         super.onResume();
         load(null);
-        if (pendingApk != null && canInstall()) {
-            File apk = pendingApk;
-            pendingApk = null;
-            install(apk);
-        }
+        Installer.resume(this);
     }
 
     // ---------------------------------------------------------------- interfaz
@@ -573,38 +570,8 @@ public class FilesActivity extends Activity {
 
     // ---------------------------------------------------------------- instalar apps
 
-    private boolean canInstall() {
-        return Build.VERSION.SDK_INT < 26 || getPackageManager().canRequestPackageInstalls();
-    }
-
-    private void install(final File apk) {
-        if (!canInstall()) {
-            new AlertDialog.Builder(this)
-                    .setTitle("Permitir instalar apps")
-                    .setMessage("Para instalar apps desde aquí, activa \"Permitir de esta fuente\" para Navegador "
-                            + "en la pantalla que se abrirá, y luego vuelve con Atrás.")
-                    .setPositiveButton("Abrir ajustes", (d, w) -> {
-                        pendingApk = apk;
-                        try {
-                            startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                                    Uri.parse("package:" + getPackageName())));
-                        } catch (Exception e) {
-                            pendingApk = null;
-                            toast("Este equipo no tiene esa pantalla. Busca \"Fuentes desconocidas\" en Ajustes > Seguridad.");
-                        }
-                    })
-                    .setNegativeButton("Cancelar", null)
-                    .show();
-            return;
-        }
-        Intent i = new Intent(Intent.ACTION_VIEW)
-                .setDataAndType(uri(apk), "application/vnd.android.package-archive")
-                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        try {
-            startActivity(i);
-        } catch (ActivityNotFoundException e) {
-            toast("Este equipo no permite instalar apps desde archivos.");
-        }
+    private void install(File apk) {
+        Installer.install(this, uri(apk));
     }
 
     // ---------------------------------------------------------------- copiar, mover, borrar

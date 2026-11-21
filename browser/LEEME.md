@@ -10,6 +10,12 @@ El **navegador** está pensado para abrir apps de tu Wi-Fi como **Transfer**. De
   (los resuelve él mismo por mDNS).
 - **Busca solo en tu red**: la pantalla de inicio muestra las páginas que encuentra
   en el Wi-Fi (puertos 4747, 8080, 8000, 8888, 5000, 3000 y 80) y marca las de Transfer.
+- **Descargas con estado**: botón ⬇ y una barra azul arriba muestran el avance, la velocidad y el
+  tamaño. En el panel de Descargas puedes cancelar, reintentar, abrir, reproducir o ver el archivo en Archivos.
+- **Instalar APK desde el navegador**: al terminar de descargar un `.apk` pregunta si instalarlo,
+  y en el panel de Descargas queda el botón **Instalar** (sin pasar por Archivos).
+- **Pestañas**, buscar texto en la página, ver el sitio como computadora, historial, tamaño del texto,
+  pantalla completa, compartir enlace, borrar datos y menú al mantener pulsado un enlace o imagen (menú ⋮).
 - **Subir archivos**: abre el selector de archivos del equipo (en TV necesitas un
   explorador instalado, por ejemplo "Files" o "X-plore").
 - **Descargar**: guarda en **Descargas/Navegador** con el progreso en una notificación.
@@ -42,8 +48,8 @@ El **navegador** está pensado para abrir apps de tu Wi-Fi como **Transfer**. De
 
 ## Accesos directos
 
-En el navegador, el botón 📌 crea un acceso directo a la página actual en la pantalla
-de inicio del equipo. En teléfonos y tablets aparece como una app más. Algunos
+En el navegador, Menú (⋮) > Crear acceso directo crea un acceso a la página actual que se abre
+siempre con este navegador. También queda en **Inicio > Mis apps web**. En teléfonos y tablets aparece como una app más. Algunos
 lanzadores de Android TV no permiten accesos directos nuevos; ahí usa favoritos (★).
 
 ## Código
