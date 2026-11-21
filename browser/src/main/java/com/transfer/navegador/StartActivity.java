@@ -54,6 +54,19 @@ public class StartActivity extends Activity {
             clp.setMargins(dp(10), dp(10), dp(10), dp(10));
             row.addView(v, clp);
         }
+        TextView ver = new TextView(this);
+        try {
+            android.content.pm.PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
+            ver.setText("Versión " + pi.versionName + "  (compilación " + pi.versionCode + ")");
+        } catch (Exception e) {
+            ver.setText("");
+        }
+        ver.setTextSize(14);
+        ver.setTextColor(Color.parseColor("#566078"));
+        ver.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams vlp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        vlp.topMargin = dp(12);
+        page.addView(ver, vlp);
         setContentView(page);
         web.requestFocus();
     }

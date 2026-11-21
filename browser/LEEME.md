@@ -65,3 +65,11 @@ lanzadores de Android TV no permiten accesos directos nuevos; ahí usa favoritos
 
 `browser/` es un módulo del mismo proyecto que `app/` (Java puro, sin librerías).
 GitHub Actions compila los dos APK en cada cambio a `main`.
+
+## Actualizar la app
+
+Cada compilación sube sola el número de versión (se ve en la pantalla inicial). Para que
+`Navegador-Transfer.apk` se instale **encima** de la anterior, todas las versiones deben estar firmadas con la
+misma llave. La llave no está en el repositorio: se guarda como secreto `KEYSTORE_BASE64` en
+GitHub (Settings > Secrets and variables > Actions). Sin ese secreto se firma con una llave de prueba distinta
+en cada compilación, y Android no deja actualizar encima (hay que desinstalar antes).

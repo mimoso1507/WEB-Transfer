@@ -14,6 +14,16 @@ jobs:
         with: { distribution: temurin, java-version: '17' }
       - uses: gradle/actions/setup-gradle@v4
         with: { gradle-version: '8.14.3' }
+      - name: Preparar llave de firma
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            mkdir -p keystore
+            echo "$KEYSTORE_BASE64" | base64 -d > keystore/navegador.jks
+          else
+            echo "Sin llave fija: se firma con la llave de prueba"
+          fi
       - run: gradle assembleRelease --no-daemon
       - run: |
           cp app/build/outputs/apk/release/*.apk Transfer.apk

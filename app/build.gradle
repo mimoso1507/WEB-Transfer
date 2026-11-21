@@ -3,17 +3,31 @@ plugins { id 'com.android.application' }
 android {
     namespace 'com.transfer.app'
     compileSdk 35
+
+    // Llave fija (la pone el flujo de GitHub desde un secreto): asi cada version se instala encima de la anterior.
+    // Si no existe, se firma con la llave de prueba y hay que desinstalar antes de actualizar.
+    def keystore = rootProject.file('keystore/navegador.jks')
+    signingConfigs {
+        if (keystore.exists()) {
+            release {
+                storeFile keystore
+                storePassword 'navegador'
+                keyAlias 'navegador'
+                keyPassword 'navegador'
+            }
+        }
+    }
     defaultConfig {
         applicationId 'com.transfer.app'
         minSdk 21
         targetSdk 35
-        versionCode 1
-        versionName '1.0'
+        versionCode 100 + (System.getenv('GITHUB_RUN_NUMBER') ?: '0').toInteger()
+        versionName "1.${(System.getenv('GITHUB_RUN_NUMBER') ?: '0')}"
     }
     buildTypes {
         release {
             minifyEnabled false
-            signingConfig signingConfigs.debug
+            signingConfig keystore.exists() ? signingConfigs.release : signingConfigs.debug
         }
     }
     compileOptions {
